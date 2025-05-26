@@ -41,7 +41,7 @@ export default function RootLayout({
                   <div className="flex items-center space-x-6 mt-2 md:mt-0">
                     <a href="#" className="hover:text-primary transition-colors duration-200">Privacy</a>
                     <a href="#" className="hover:text-primary transition-colors duration-200">Terms</a>
-                    <a href="mailto:kuldeep@levelsupermind.com" className="hover:text-primary transition-colors duration-200">kuldeep@levelsupermind.com</a>
+                    <a href="mailto:kanj55567@gmail.com" className="hover:text-primary transition-colors duration-200">kanj55567@gmail.com</a>
                   </div>
                 </div>
               </footer>

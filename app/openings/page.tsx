@@ -81,6 +81,7 @@ export default function JobOpenings() {
       const formData = new FormData();
       formData.append('resume', file);
       formData.append('position', job.job_title);
+      formData.append('email', session.user.email);
 
       setLoadingStage('Analyzing resume...');
 

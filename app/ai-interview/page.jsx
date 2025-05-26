@@ -356,14 +356,23 @@ export default function AIInterview() {
   useEffect(() => {
     const initializeVideo = async () => {
       try {
+        // Use lower resolution and disable framerate constraints for faster setup
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { width: 640, height: 480 }, 
+          video: { 
+            width: { ideal: 640, max: 1280 },
+            height: { ideal: 480, max: 720 },
+            facingMode: "user"
+          }, 
           audio: false 
         });
+        
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current.play().catch(e => console.error("Video play error:", e));
+            setVideoReady(true);
+          };
           streamRef.current = stream;
-          setVideoReady(true);
         }
       } catch (err) {
         console.error('Error accessing camera:', err);
@@ -371,6 +380,7 @@ export default function AIInterview() {
       }
     };
 
+    // Start video initialization immediately
     initializeVideo();
 
     return () => {
@@ -450,6 +460,18 @@ export default function AIInterview() {
     }
 
     setInterviewStarted(true);
+    
+    // Ensure video keeps working when switching to interview mode
+    if (streamRef.current && videoRef.current) {
+      // Reset video stream to ensure it shows correctly
+      videoRef.current.srcObject = null;
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = streamRef.current;
+          videoRef.current.play().catch(e => console.error("Video play error:", e));
+        }
+      }, 100);
+    }
     
     const welcomeMessage = `Hello ${candidateInfo?.name || 'candidate'}! Welcome to your ${candidateInfo?.position || 'position'} interview. I'll be asking you ${questions.length} questions. Please speak clearly and use the record button to capture your responses. Let's begin with the first question.`;
     
@@ -625,6 +647,31 @@ export default function AIInterview() {
     }
   };
 
+  // Monitor and handle video stream issues
+  useEffect(() => {
+    if (interviewStarted && videoRef.current && streamRef.current) {
+      // Check if video is actually playing
+      const checkVideoStatus = () => {
+        if (videoRef.current && (!videoRef.current.srcObject || videoRef.current.readyState === 0)) {
+          console.log("Video not playing properly, attempting to restore stream");
+          try {
+            videoRef.current.srcObject = streamRef.current;
+            videoRef.current.play().catch(e => console.error("Video restart error:", e));
+          } catch (err) {
+            console.error("Error restoring video stream:", err);
+          }
+        }
+      };
+      
+      // Check video status periodically
+      const videoMonitor = setInterval(checkVideoStatus, 3000);
+      
+      return () => {
+        clearInterval(videoMonitor);
+      };
+    }
+  }, [interviewStarted]);
+
   // Cleanup
   useEffect(() => {
     return () => {
@@ -763,9 +810,10 @@ export default function AIInterview() {
                     <video
                       ref={videoRef}
                       autoPlay
+                      playsInline
                       muted
                       className="w-full max-w-md mx-auto rounded-lg shadow-lg"
-                      style={{ maxHeight: '300px' }}
+                      style={{ maxHeight: '300px', backgroundColor: '#000' }}
                     />
                     <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">
                       {videoReady ? 'Camera is ready ✓' : 'Setting up camera...'}
@@ -944,9 +992,15 @@ export default function AIInterview() {
                   <video
                     ref={videoRef}
                     autoPlay
+                    playsInline
                     muted
                     className="w-full rounded-xl shadow-lg"
-                    style={{ maxHeight: '400px', objectFit: 'cover' }}
+                    style={{ height: '400px', objectFit: 'cover', backgroundColor: '#000' }}
+                    onLoadedMetadata={() => {
+                      if (videoRef.current) {
+                        videoRef.current.play().catch(e => console.error("Video play error:", e));
+                      }
+                    }}
                   />
                   {isRecording && (
                     <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
